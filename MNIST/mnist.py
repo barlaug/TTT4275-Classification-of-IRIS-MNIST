@@ -83,15 +83,17 @@ def display_predictions(failed_indexes, correct_indexes, x_test, y_test, n):
         n: Numbers of plots of correct or incorrect predictions
     """
     if failed_indexes:
+        print(f"Displaying {n} misclassified pictures...")
         for i, failed in enumerate(failed_indexes):
             if i <= n:
                 print(f"True number was: {y_test[failed]}\nPredicted number was: {y_pred[failed]}")
                 plt.imshow(x_test[failed].reshape(28, 28))
                 plt.show()
     elif correct_indexes:
+        print(f"Displaying {n} correctly classified pictures...")
         for i, correct in enumerate(correct_indexes):
             if i <= n:
-                print(f"Correctly predicted number: {y_test[correct]}")
+                print(f"Correctly classified number: {y_test[correct]}")
                 plt.imshow(x_test[correct].reshape(28, 28))
                 plt.show()
     else: return
@@ -113,7 +115,7 @@ if __name__ == '__main__':
     # Classify the values in the test set with a kNN-classifier with k_neighs neighbours
     k_neighs = 3
     y_pred = knn_predictions(x_train, y_train, x_test, k_neighs)
-    # Confusion matrix and error rate
+    # Display confusion matrix and error rate for the classifier
     cm = confusion_matrix(y_test, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
@@ -121,15 +123,17 @@ if __name__ == '__main__':
     print(classification_report(y_test, y_pred)) # Error rate is given in report
     # END Task 1A
 
-    # BEGIN Task 1B
+    # # BEGIN Task 1B
     failed_indexes, correct_indexes = sort_predictions(y_pred, y_test)
-    n_fails = 4
-    display_predictions(failed_indexes, [], x_test, y_test, n_fails)
-    # END Task 1B
+    # n_fails = 4
+    # # Show some (n_fails) misclassified pictures
+    # display_predictions(failed_indexes, [], x_test, y_test, n_fails)
+    # # END Task 1B
 
     # BEGIN Task 1C
     n_corrects = 4
-    display_predictions([], correct_indexes, x_test[0], y_test[0], n_corrects)
+    # Show some (n_corrects) correctly classified pictures
+    display_predictions([], correct_indexes, x_test, y_test, n_corrects)
     # END Task 1C
 
 
