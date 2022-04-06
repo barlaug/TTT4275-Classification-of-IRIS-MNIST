@@ -9,3 +9,4 @@ TODO:
 
 seinere:
 - Readme med forklaring om kjøring osv
+- Se på muligheter til å bruke notebook istedenfor?? Mye smudere plots og delt opp opgv
