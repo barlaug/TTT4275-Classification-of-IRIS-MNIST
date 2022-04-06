@@ -1,4 +1,5 @@
 TODO:
+- Time prediction også
 - Beskrivelse av struktur i fil øverst
 - Lag loop for å velge oppgave input/output greie
     - Funk: present_task()
