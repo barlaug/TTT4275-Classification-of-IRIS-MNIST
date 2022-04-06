@@ -1,0 +1,11 @@
+TODO:
+- Beskrivelse av struktur i fil øverst
+- Lag loop for å velge oppgave input/output greie
+    - Funk: present_task()
+. Renske funksjoner og se over beskrivelsene
+    - Merge/splitte noen? Gjør eks. knn_pred for mye (pred og timing)?
+- Se om mulig med kortere funkbeskrivelser med syntax """Beskrivelse""", så d kommer
+  opp når man holder musa pver
+
+seinere:
+- Readme med forklaring om kjøring osv

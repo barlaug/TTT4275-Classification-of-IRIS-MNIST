@@ -7,11 +7,6 @@ from sklearn.neighbors import KNeighborsClassifier # NB: pip install sklearn
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.cluster import KMeans
 
-# TODO: 
-# Add description of file structure and what is does
-# se på performance for ulike k-verdier, se: https://stackabuse.com/k-nearest-neighbors-algorithm-in-python-and-scikit-learn/
-# lag loop for å velge oppgave input/output greie 
-
 # BEGIN Utilities
 
 def flatten_split_data(x_train, y_train, x_test, y_test, n_chunks):
@@ -55,11 +50,11 @@ def knn_predictions(x_train, y_train, x_test, k_neighbours):
         fit_time: float
             Time used to fit training data
     """
-    neigh = KNeighborsClassifier(n_neighbors=k_neighbours, n_jobs=-1, metric='euclidean') # distance = Euclidean and n_jobs = 1 by default
+    neigh = KNeighborsClassifier(n_neighbors=k_neighbours, metric='euclidean') # distance = Euclidean and n_jobs = 1 by default
     tstart = time.time()
     neigh.fit(x_train, y_train) 
     fit_time = time.time() - tstart
-    print(fit_time)
+
     return neigh.predict(x_test), fit_time
 
 
@@ -82,10 +77,11 @@ def sort_predictions_knn(y_pred, y_test):
     correct_indexes = []
     for i, (j, k) in enumerate(zipped):
         failed_indexes.append(i) if (j != k) else correct_indexes.append(i)
+
     return failed_indexes, correct_indexes
 
 
-def display_predictions(failed_indexes, correct_indexes, x_test, y_test, n):
+def display_predictions(failed_indexes, correct_indexes, x_test, y_test, y_pred, n):
     """Displays the first n correct or incorrect predictions that the 
        classifier made.
     Params:
@@ -97,6 +93,8 @@ def display_predictions(failed_indexes, correct_indexes, x_test, y_test, n):
             The handwritten numbers from the testset
         y_test: np.ndarray
             The true values from the test set
+        y_pred: np.ndarray
+            Predicted values
         n: int
             Numbers of plots of correct or incorrect predictions
     """
@@ -134,6 +132,7 @@ def sort_data(data, labels):
     # Fill dict with correct members from x_train
     for i in range(len(labels)):
         data_sorted[labels[i]].append(data[i])
+
     return data_sorted
 
 def cluster(data, labels, M):
@@ -166,12 +165,51 @@ def cluster(data, labels, M):
     # Convert to np.ndarray for passing to kNN classifier.
     # Because means (cluster centroids) have lots of decimals, we 
     # need .astype(int) to make arrays sparse, i.e. very small vals->0.
-    # If not then clustering won't be more effective than "normal" kNN... 
+    # If not then clustering won't be more effective than "normal" kNN. 
     x_train_modified = np.array(x_train_modified).astype(int)
     y_train_modified = np.array(y_train_modified).astype(int)
 
     return x_train_modified, y_train_modified
 
+def display_CM_Error(y_pred, y_true):
+    """Displays confusion matrix and classification report/errors
+       for deviation between predicted and true labels
+    Params:
+        y_pred, y_true: np.ndarray
+            Predicted and true labels/classes
+    """
+    cm = confusion_matrix(y_true, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot()
+    plt.show()
+    print(classification_report(y_true, y_pred)) # Error rate is given in report
+
+
+def k_performancemeasure(k_max, x_train, y_train, x_test, y_test):
+    """Plots mean error and fit time as functions of K (number of neighbours)
+       in the kNN classsifier.
+    """
+    times = []
+    error = []
+    for k in range(1, k_max):
+        y_pred, tk = knn_predictions(x_train, y_train, x_test, k)
+        times.append(tk)
+        error.append(np.mean(y_pred != y_test))
+        
+    _, ax = plt.subplots(2)
+    ax[0].plot(range(1, k_max), error, color='red', linestyle='dashed', marker='o',
+            markerfacecolor='blue', markersize=10)
+    ax[0].set_title('Error Rate by K Value')
+    ax[0].set_xlabel('K Value')
+    ax[0].set_ylabel('Mean Error')
+
+    ax[1].plot(range(1, k_max), times, color='red', linestyle='dashed', marker='o',
+            markerfacecolor='blue', markersize=10)
+    ax[1].set_title('Fit Time by K Value')
+    ax[1].set_xlabel('K Value')
+    ax[1].set_ylabel('Fit Time')
+    plt.show()
+    
 # END utilities
 
 
@@ -180,60 +218,62 @@ def cluster(data, labels, M):
 if __name__ == '__main__':
     # Load data
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    # Change to np.array and type to int/float
+    x_train = np.asarray(x_train).astype(float)
+    y_train = np.asarray(y_train).astype(int)
+    x_test = np.asarray(x_test).astype(float)
+    y_test = np.asarray(y_test).astype(int)
     # Flatten data, split into n chuncks for time saving, n_chunks = 1 if whole dataset is to be used
-    n_chuncks = 10
+    n_chuncks = 5
     x_train, y_train, x_test, y_test = flatten_split_data(x_train, y_train, x_test, y_test, n_chuncks)
     # Choose which data chunck to use, 0 is fine - Change it for slightly different results
-    chunk = 3
+    chunk = 0
     x_train, y_train, x_test, y_test = x_train[chunk], y_train[chunk], x_test[chunk], y_test[chunk]
 
     # # BEGIN Task 1A
     # # Classify the values in the test set with a kNN-classifier with k_neighs neighbours
     # k_neighs = 3
-    # y_pred = knn_predictions(x_train, y_train, x_test, k_neighs)
+    # y_pred, _ = knn_predictions(x_train, y_train, x_test, k_neighs)
     # # Display confusion matrix and error rate for the classifier
-    # cm = confusion_matrix(y_test, y_pred)
-    # disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    # disp.plot()
-    # plt.show()
-    # print(classification_report(y_test, y_pred)) # Error rate is given in report
+    # display_CM_Error(y_pred, y_test)
+    
     # # END Task 1A
 
     # # BEGIN Task 1B
     # failed_indexes, correct_indexes = sort_predictions_knn(y_pred, y_test)
     # n_fails = 4
     # # Show some (n_fails) misclassified pictures
-    # display_predictions(failed_indexes, [], x_test, y_test, n_fails)
+    # display_predictions(failed_indexes, [], x_test, y_test, y_pred, n_fails)
     # # END Task 1B
 
     # # BEGIN Task 1C
     # n_corrects = 4
     # # Show some (n_corrects) correctly classified pictures
-    # display_predictions([], correct_indexes, x_test, y_test, n_corrects)
+    # display_predictions([], correct_indexes, x_test, y_test, y_pred, n_corrects)
     # # END Task 1C
 
     # BEGIN Task 2A
-    d, x_train_clustr, y_train_clustr = cluster(x_train, y_train, M=64)
-    # Prove correct shape = (64, 28x28)
-    # for i in range(9):
-    #     print(str(d[i].shape))
-    # print(x)
-    # print("x_train:", str(x_train.shape))
-    # print("y_train:", str(y_train.shape))
-    # print("x_train_c:", str(x_train_clustr.shape))
-    # print("y_train_c:", str(y_train_clustr.shape))
-    k_neighs = 3
-    y_pred_clustr, t2 = knn_predictions(x_train_clustr, y_train_clustr, x_test, k_neighs)
-    y_pred, t1 = knn_predictions(x_train, y_train, x_test, k_neighs)
-    print(f'Fit times:\nWithout clustering: {t1}\nWith clustering: {t2}')
-    for i in range(500, 600):
-        print(x_train_clustr[i])
-    cm = confusion_matrix(y_test, y_pred)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot()
-    plt.show()
-    print(classification_report(y_test, y_pred_clustr)) 
-    # END Task 2A
+    # x_train_clustr, y_train_clustr = cluster(x_train, y_train, M=64)
+    # # END Task 2A
+    # # BEGIN Task 2B
+    # k_neighs = 3
+    # y_pred, t1 = knn_predictions(x_train, y_train, x_test, k_neighs)
+    # y_pred_clustr, t2 = knn_predictions(x_train_clustr, y_train_clustr, x_test, k_neighs)
+    # print(f'Fit times for training set of length {int(len(x_train)/n_chuncks)}:\nWithout clustering: {t1}\nWith clustering: {t2}')
+    # display_CM_Error(y_pred, y_test)
+    # display_CM_Error(y_pred_clustr, y_test)
+    # END Task 2B
+    # BEGIN Task 2C
+    # k_neighs_new = 7
+    # y_pred, t1 = knn_predictions(x_train, y_train, x_test, k_neighs_new)
+    # print(f'Fit times for training set of length {int(len(x_train)/n_chuncks)}, with K = {k_neighs_new}:\nWithout clustering: {t1}')
+    # display_CM_Error(y_pred, y_test)
+    # END Task 2C
+
+    # Performance measure
+    k_performancemeasure(30, x_train, y_train, x_test, y_test)
+
+
 
 
 
