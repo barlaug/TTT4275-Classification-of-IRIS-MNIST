@@ -153,23 +153,23 @@ def cluster(data, labels, M):
     """
     data_sorted = sort_data(data, labels)
     # Vectors for extending the dict into 2D training vectors
-    x_train_modified, y_train_modified = [], [] 
+    x_train_small, y_train_small = [], [] 
     for class_i, members in data_sorted.items():
         # Fit members to class with M clusters
         kmeans = KMeans(n_clusters=M).fit(members)
         # Insert array of cluster centers as new members to class i_class
-        x_train_modified.extend(kmeans.cluster_centers_)
+        x_train_small.extend(kmeans.cluster_centers_)
         # Append M elements of the class to make x and y have equal lengths
-        y_train_modified.extend(np.repeat(class_i, M))
+        y_train_small.extend(np.repeat(class_i, M))
 
     # Convert to np.ndarray for passing to kNN classifier.
     # Because means (cluster centroids) have lots of decimals, we 
     # need .astype(int) to make arrays sparse, i.e. very small vals->0.
     # If not then clustering won't be more effective than "normal" kNN. 
-    x_train_modified = np.array(x_train_modified).astype(int)
-    y_train_modified = np.array(y_train_modified).astype(int)
+    x_train_small = np.array(x_train_small).astype(int)
+    y_train_small = np.array(y_train_small).astype(int)
 
-    return x_train_modified, y_train_modified
+    return x_train_small, y_train_small
 
 def display_CM_Error(y_pred, y_true):
     """Displays confusion matrix and classification report/errors
