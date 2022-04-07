@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import random
 from matplotlib import pyplot as plt
 from keras.datasets import mnist #!NB: pip install tensorflow, pip install keras -> Skriv i readme.
 from sklearn.neighbors import KNeighborsClassifier # NB: pip install sklearn
@@ -20,7 +21,7 @@ def flatten_split_data(x_train, y_train, x_test, y_test, n_chunks):
     Returns:
         Reshaped arrays
     """
-    # Flatten 2D data vectors/images into 1D arrays
+    # Flatten 2D images into 1D arrays
     nsamples_train, nx_train, ny_train = x_train.shape
     x_train = x_train.reshape((nsamples_train,nx_train*ny_train))
     nsamples_test, nx_test, ny_test = x_test.shape
@@ -33,16 +34,16 @@ def flatten_split_data(x_train, y_train, x_test, y_test, n_chunks):
     return x_train, y_train, x_test, y_test
 
 
-def knn_predictions(x_train, y_train, x_test, k_neighs):
-    """Creates kNN classifier, fits it to training data and classifies 
-    the test data based of of the training samples.
+def knn(x_train, y_train, x_test, k_neighs):
+    """Creates kNN classifier, fits it to training data and classifies the
+       test data based of of the training samples. Also times fitting and prediction.
     Params:
         x_train, y_train: np.ndarray
             Training dataset
         x_test: np.ndarray
             Testing dataset to be predicted
         k_neighbours: int
-            Number of neighbours in the kNN classifier
+            Number of neighbours to be used in the kNN classifier
     Returns: 
         y_pred: np.ndarray
             Predicted values for the test set
@@ -52,81 +53,83 @@ def knn_predictions(x_train, y_train, x_test, k_neighs):
             Time used to classify/predict the test data
     """
     neigh = KNeighborsClassifier(n_neighbors=k_neighs, metric='euclidean')
-    # Fit, predict and time both operations
-    tstart_fit = time.time()
+    # Fit and predict. Time both operations
+    t0_fit = time.time()
     neigh.fit(x_train, y_train) 
-    fit_time = time.time() - tstart_fit
-    tstart_pred = time.time()
+    fit_time = time.time() - t0_fit
+    t0_pred = time.time()
     y_pred = neigh.predict(x_test)
-    pred_time = time.time() - tstart_pred
+    pred_time = time.time() - t0_pred
 
     return y_pred, fit_time, pred_time
 
 
 def sort_predictions_knn(y_pred, y_test):
-    """Finds the wrong and correct predictions in y_pred and returns 
+    """Finds the true and false predictions in y_pred and returns 
     arrays with the corresponding index.
     Params:
         y_pred: np.ndarray
-            The values predicted by the classifier for the test set
+            Predicted labels from some test set
         y_test: np.ndarray
-            The true values for the test set
+            True labels for the same set
     Returns:
         failed_indexes: list
-            indexes where the prediction was incorrect
+            Indexes with incorrect predictions
         correct_indexes: list
-            indexes where the prediction was correct
+            Indexes with correct predictions
     """
     zipped = zip(y_pred, y_test)
     failed_indexes = []
     correct_indexes = []
     for i, (j, k) in enumerate(zipped):
-        failed_indexes.append(i) if (j != k) else correct_indexes.append(i)
-
+        failed_indexes.append(i) if j != k else correct_indexes.append(i)
+    
     return failed_indexes, correct_indexes
 
 
 def display_predictions(failed_indexes, correct_indexes, x_test, y_test, y_pred, n):
-    """Displays the first n correct or incorrect predictions that the 
-       classifier made.
+    """Displays n random samples from the correct or incorrect predictions that 
+       the classifier made and display them.
     Params:
         failed_indexes: list
-            indexes where the prediction was incorrect
+            Indexes with incorrect predictions
         correct_indexes: list
-            indexes where the prediction was correct
+            Indexes with correct predictions
         x_test: np.ndarray
-            The handwritten numbers from the testset
+            Handwritten numbers from the test set
         y_test: np.ndarray
-            The true values from the test set
+            True values for the test set
         y_pred: np.ndarray
             Predicted values
         n: int
-            Numbers of plots of correct or incorrect predictions
+            Numbers of examples to show
     """
     if failed_indexes:
+        # Get n random samples from failed idx list
+        rand_failsample = random.sample(failed_indexes, n)
         print(f"Displaying {n} misclassified pictures...")
-        for i, failed in enumerate(failed_indexes):
-            if i <= n:
-                print(f"True number was: {y_test[failed]}\nPredicted number was: {y_pred[failed]}")
-                plt.imshow(x_test[failed].reshape(28, 28))
-                plt.show()
-    elif correct_indexes:
+        for failed_idx in rand_failsample:
+            print(f"True number was: {y_test[failed_idx]}\nPredicted number was: {y_pred[failed_idx]}\n")
+            plt.imshow(x_test[failed_idx].reshape(28, 28))
+            plt.show()
+    if correct_indexes:
+        # Get n random samples from correct idx list
+        rand_corrsample = random.sample(correct_indexes, n)
         print(f"Displaying {n} correctly classified pictures...")
-        for i, correct in enumerate(correct_indexes):
-            if i <= n:
-                print(f"Correctly classified number: {y_test[correct]}")
-                plt.imshow(x_test[correct].reshape(28, 28))
-                plt.show()
+        for corr_idx in rand_corrsample:
+            print(f"True number was: {y_test[corr_idx]}\nPredicted number was: {y_pred[corr_idx]}\n")
+            plt.imshow(x_test[corr_idx].reshape(28, 28))
+            plt.show()
     else: return
 
 def sort_data(data, labels):
-    """Sorts all members of x_train into the classes from y_train.
+    """Sorts all members of data into the classes from labels.
     Params:
         data: np.ndarray
-            Feature vectors 
+            Feature vectors, i.e. x_train
         labels: np.ndarray
-            Correct labels/values
-    Retutns:
+            Correct labels/values, i.e. y_train
+    Returns:
         data_sorted: dict
             Dict with sorted members. Key = class, 
             value = array of feature vectors corresponding to that class
@@ -141,36 +144,34 @@ def sort_data(data, labels):
     return data_sorted
 
 def cluster(data, labels, M):
-    """ Clusters each class into M clusters with Kmeans(), each cluster 
-        center acts as a template vector for the given class in the returned dict 
+    """ Clusters each class into M clusters using the Kmeans algorithm. 
+        Each cluster mean acts as a template vector for the given class 
+        in the returned condensed training dataset. 
     Params:
         data: np.ndarray
             Feature vectors 
         label: np.ndarray
             Correct labels/values
         M: int
-            Number of clusters
+            Number of clusters to be used in Kmeans
     Returns:
         x_train_small: np.ndarray
-            ...
+            Array of new template vectors
         y_train_small: np.ndarray
-            ...
+            True labels/classes for the template vectors
     """
     data_sorted = sort_data(data, labels)
-    # Vectors for extending the dict into 2D training vectors
+    # Cointainers for extending the data_sorted dict into 2D training vectors
     x_train_small, y_train_small = [], [] 
     for class_i, members in data_sorted.items():
-        # Fit members to class with M clusters
+        # Compute kmeans clustering for given class
         kmeans = KMeans(n_clusters=M).fit(members)
-        # Insert array of cluster centers as new members to class i_class
+        # Insert array of cluster centroids/means as new members to class i_class
         x_train_small.extend(kmeans.cluster_centers_)
-        # Append M elements of the class to make x and y have equal lengths
+        # Append M elements of the class to new y_train to make x and y have equal lengths
         y_train_small.extend(np.repeat(class_i, M))
 
-    # Convert to np.ndarray for passing to kNN classifier.
-    # Because means (cluster centroids) have lots of decimals, we 
-    # need .astype(int) to make arrays sparse, i.e. very small vals->0.
-    # If not then clustering won't be more effective than "normal" kNN. 
+    # Convert to integer np.ndarrays for passing to kNN classifier
     x_train_small = np.array(x_train_small).astype(int)
     y_train_small = np.array(y_train_small).astype(int)
 
@@ -188,19 +189,19 @@ def display_CM_Error(y_pred, y_true):
     disp.plot()
     print('Displaying confusion matrix...')
     plt.show()
-    print('Displaying classification report:')
-    print(classification_report(y_true, y_pred)) # Error rate is given in report
+    print('Classification report:')
+    print(classification_report(y_true, y_pred)) # Accuracy is given in report
 
 
 def k_performancemeasure(k_max, x_train, y_train, x_test, y_test):
-    """Plots mean error and fit time as functions of K (number of neighbours)
-       in the kNN classsifier.
+    """Plots mean error, fit time and prediction time as functions 
+       of K (number of neighbours) in the kNN classsifier.
     """
     fit_times = []
     pred_times = []
     error = []
     for k in range(1, k_max):
-        y_pred, tk_fit, tk_pred = knn_predictions(x_train, y_train, x_test, k)
+        y_pred, tk_fit, tk_pred = knn(x_train, y_train, x_test, k)
         fit_times.append(tk_fit)
         pred_times.append(tk_pred)
         error.append(np.mean(y_pred != y_test))
@@ -224,11 +225,10 @@ def k_performancemeasure(k_max, x_train, y_train, x_test, y_test):
 # END utilities
 
 
-
-
 if __name__ == '__main__':
     ######### PRESENT TASKS ##########
 
+    # """
     # TASK 1
     # (For this task you may comment out entire TASK 2)
 
@@ -238,7 +238,7 @@ if __name__ == '__main__':
     # Choose which data chunck to use after splitted, 0 is fine - Change it for slightly different results
     chunk = 0
     # Choose number of falsely predicted images to display in Task 1B
-    n_fails = 5
+    n_fails = 4
     # Choose number of correctly predicted images to display in Task 1C
     n_corrects = 5
 
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     x_train, y_train, x_test, y_test = x_train[chunk], y_train[chunk], x_test[chunk], y_test[chunk]
 
     # Classify the values in the test set with a kNN-classifier with k_neighs neighbours
-    y_pred, _, _ = knn_predictions(x_train, y_train, x_test, k_neighs=3)
+    y_pred, _, _ = knn(x_train, y_train, x_test, k_neighs=3)
 
     # Display confusion matrix and error rate for the classifier
     display_CM_Error(y_pred, y_test)
@@ -266,10 +266,10 @@ if __name__ == '__main__':
     # Show some (n_corrects) correctly classified pictures
     display_predictions([], correct_indexes, x_test, y_test, y_pred, n_corrects)
 
-
+    # """ 
     # TASK 2
     # (For this task you may comment out entire TASK 1)
-
+    
     # For task 2 we need the whole dataset; update globals and data vectors
     n_chunks = 1
     chunk = 0
@@ -288,8 +288,8 @@ if __name__ == '__main__':
 
     # Find confusion matrix and error rate for the kNN classifier from Task 1 using the M = 64 templates
     # per class with the whole dataset. Measure and display time spent on fitting and predicting 
-    y_pred, tfit1, tpred1 = knn_predictions(x_train, y_train, x_test, k_neighs=3)
-    y_pred_clustr, tfit2, tpred2 = knn_predictions(x_train_clustr, y_train_clustr, x_test, k_neighs=3)
+    y_pred, tfit1, tpred1 = knn(x_train, y_train, x_test, k_neighs=3)
+    y_pred_clustr, tfit2, tpred2 = knn(x_train_clustr, y_train_clustr, x_test, k_neighs=3)
     print('K = 3:')
     print("Confusion matrix and error without clustering:")
     display_CM_Error(y_pred, y_test)
@@ -299,8 +299,8 @@ if __name__ == '__main__':
     print(f'\nPrediction times for test set of length {int(len(x_test)/n_chunks)}:\n\tWithout clustering: {tpred1}s\n\tWith clustering: {tpred2}s')
     
     # Design kNN classifier with k = 7. Find confusion matrix and error rate. Compare with previous systems
-    y_pred_k7, tfit1_k7 , tpred1_k7 = knn_predictions(x_train, y_train, x_test, k_neighs=7)
-    y_pred_clustr_k7, tfit2_k7, tpred2_k7 = knn_predictions(x_train_clustr, y_train_clustr, x_test, k_neighs=7)
+    y_pred_k7, tfit1_k7 , tpred1_k7 = knn(x_train, y_train, x_test, k_neighs=7)
+    y_pred_clustr_k7, tfit2_k7, tpred2_k7 = knn(x_train_clustr, y_train_clustr, x_test, k_neighs=7)
     print('K = 7:')
     print("Confusion matrix and error without clustering:")
     display_CM_Error(y_pred_k7, y_test)
@@ -309,11 +309,17 @@ if __name__ == '__main__':
     print(f'Fit times for training set of length {int(len(x_train)/n_chunks)}:\n\tWithout clustering: {tfit1_k7}s\n\tWith clustering: {tfit2_k7}s')
     print(f'\nPrediction times for test set of length {int(len(x_test)/n_chunks)}:\n\tWithout clustering: {tpred1_k7}s\n\tWith clustering: {tpred2_k7}s')
 
+    # """
+
+    # """
     # Extra: 
     # (For this part, you may comment out the rest of main)
-    # Plot kNN performance as a function of number of neighbours, k
+    # Plot kNN performance as a function of number of neighbours k
+    # Takes a while to compute, as it evaluates knn() k_max times...
     k_max = 30
     k_performancemeasure(k_max, x_train, y_train, x_test, y_test)
+
+    # """
 
 
 
