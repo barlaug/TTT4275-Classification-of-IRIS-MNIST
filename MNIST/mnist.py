@@ -271,7 +271,7 @@ if __name__ == '__main__':
     # TASK 2
     # (For this task you may comment out entire TASK 1)
 
-    # For task 2 we need the whole dataset; updatE globals and data vectors
+    # For task 2 we need the whole dataset; update globals and data vectors
     n_chunks = 1
     chunk = 0
     # Load data
