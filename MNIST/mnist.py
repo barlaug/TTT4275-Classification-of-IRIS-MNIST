@@ -240,7 +240,7 @@ if __name__ == '__main__':
     # Choose number of falsely predicted images to display in Task 1B
     n_fails = 4
     # Choose number of correctly predicted images to display in Task 1C
-    n_corrects = 5
+    n_corrects = 4
 
     # Load data
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -257,6 +257,7 @@ if __name__ == '__main__':
     y_pred, _, _ = knn(x_train, y_train, x_test, k_neighs=3)
 
     # Display confusion matrix and error rate for the classifier
+    print(f"Initial confusion matrix and error with K = 3, trained on {int(len(x_train)/n_chunks)} samples: ")
     display_CM_Error(y_pred, y_test)
 
     # Sort failed and correctly predicted pictures by index 
@@ -269,7 +270,7 @@ if __name__ == '__main__':
     # """ 
     # TASK 2
     # (For this task you may comment out entire TASK 1)
-    
+
     # For task 2 we need the whole dataset; update globals and data vectors
     n_chunks = 1
     chunk = 0
@@ -283,7 +284,7 @@ if __name__ == '__main__':
     x_train, y_train, x_test, y_test = flatten_split_data(x_train, y_train, x_test, y_test, n_chunks)
     x_train, y_train, x_test, y_test = x_train[chunk], y_train[chunk], x_test[chunk], y_test[chunk]
     
-    # Cluster the (whole) training dataset with classwise Kmeans clustering
+    # Cluster the (entire) training dataset with classwise Kmeans clustering
     x_train_clustr, y_train_clustr = cluster(x_train, y_train, M=64)
 
     # Find confusion matrix and error rate for the kNN classifier from Task 1 using the M = 64 templates
@@ -307,11 +308,11 @@ if __name__ == '__main__':
     print("Confusion matrix and error with clustering:")
     display_CM_Error(y_pred_clustr_k7, y_test)
     print(f'Fit times for training set of length {int(len(x_train)/n_chunks)}:\n\tWithout clustering: {tfit1_k7}s\n\tWith clustering: {tfit2_k7}s')
-    print(f'\nPrediction times for test set of length {int(len(x_test)/n_chunks)}:\n\tWithout clustering: {tpred1_k7}s\n\tWith clustering: {tpred2_k7}s')
+    print(f'\nPrediction times for test set of length {int(len(x_test)/n_chunks)}:\n\tWithout clustering: {tpred1_k7}s\n\tWith clustering: {tpred2_k7}s\n')
 
     # """
 
-    # """
+    """
     # Extra: 
     # (For this part, you may comment out the rest of main)
     # Plot kNN performance as a function of number of neighbours k
