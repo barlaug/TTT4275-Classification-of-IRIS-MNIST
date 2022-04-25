@@ -60,7 +60,6 @@ def knn(x_train, y_train, x_test, k_neighs):
     t0_pred = time.time()
     y_pred = neigh.predict(x_test)
     pred_time = time.time() - t0_pred
-
     return y_pred, fit_time, pred_time
 
 
@@ -83,7 +82,6 @@ def sort_predictions_knn(y_pred, y_test):
     correct_indexes = []
     for i, (j, k) in enumerate(zipped):
         failed_indexes.append(i) if j != k else correct_indexes.append(i)
-    
     return failed_indexes, correct_indexes
 
 
@@ -140,13 +138,12 @@ def sort_data(data, labels):
     # Fill dict with correct members from x_train
     for i in range(len(labels)):
         data_sorted[labels[i]].append(data[i])
-
     return data_sorted
 
 def cluster(data, labels, M):
-    """ Clusters each class into M clusters using the Kmeans algorithm. 
-        Each cluster mean acts as a template vector for the given class 
-        in the returned condensed training dataset. 
+    """ Clusters each class into M clusters using the Kmeans algorithm and time the process. 
+        Each cluster mean acts as a template vector for the given class in the returned 
+        condensed training dataset. 
     Params:
         data: np.ndarray
             Feature vectors 
@@ -159,23 +156,29 @@ def cluster(data, labels, M):
             Array of new template vectors
         y_train_small: np.ndarray
             True labels/classes for the template vectors
+        cluster_time:
+            Time spent on clustering the data
     """
     data_sorted = sort_data(data, labels)
     # Cointainers for extending the data_sorted dict into 2D training vectors
     x_train_small, y_train_small = [], [] 
+    t0_cluster = time.time()
     for class_i, members in data_sorted.items():
-        # Compute kmeans clustering for given class
+        # Compute kmeans clusters for given class
         kmeans = KMeans(n_clusters=M).fit(members)
         # Insert array of cluster centroids/means as new members to class i_class
         x_train_small.extend(kmeans.cluster_centers_)
         # Append M elements of the class to new y_train to make x and y have equal lengths
         y_train_small.extend(np.repeat(class_i, M))
-
+    cluster_time = time.time() - t0_cluster
     # Convert to integer np.ndarrays for passing to kNN classifier
     x_train_small = np.array(x_train_small).astype(int)
     y_train_small = np.array(y_train_small).astype(int)
+    return x_train_small, y_train_small, cluster_time
 
-    return x_train_small, y_train_small
+def display_cluster_centroid():
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return
 
 def display_CM_Error(y_pred, y_true):
     """Displays confusion matrix and classification report/errors
@@ -228,7 +231,7 @@ def k_performancemeasure(k_max, x_train, y_train, x_test, y_test):
 if __name__ == '__main__':
     ######### PRESENT TASKS ##########
 
-    # """
+    #"""
     # TASK 1
     # (For this task you may comment out entire TASK 2)
 
@@ -285,7 +288,7 @@ if __name__ == '__main__':
     x_train, y_train, x_test, y_test = x_train[chunk], y_train[chunk], x_test[chunk], y_test[chunk]
     
     # Cluster the (entire) training dataset with classwise Kmeans clustering
-    x_train_clustr, y_train_clustr = cluster(x_train, y_train, M=64)
+    x_train_clustr, y_train_clustr, cluster_time = cluster(x_train, y_train, M=64)
 
     # Find confusion matrix and error rate for the kNN classifier from Task 1 using the M = 64 templates
     # per class with the whole dataset. Measure and display time spent on fitting and predicting 
@@ -298,8 +301,9 @@ if __name__ == '__main__':
     display_CM_Error(y_pred_clustr, y_test)
     print(f'Fit times for training set of length {int(len(x_train)/n_chunks)}:\n\tWithout clustering: {tfit1}s\n\tWith clustering: {tfit2}s')
     print(f'\nPrediction times for test set of length {int(len(x_test)/n_chunks)}:\n\tWithout clustering: {tpred1}s\n\tWith clustering: {tpred2}s')
-    
-    # Design kNN classifier with k = 7. Find confusion matrix and error rate. Compare with previous systems
+    print(f'Clustering time: {cluster_time}')
+
+    # Design kNN classifier with k = 7. Find confusion matrix and error rate. Compare with previous systems.
     y_pred_k7, tfit1_k7 , tpred1_k7 = knn(x_train, y_train, x_test, k_neighs=7)
     y_pred_clustr_k7, tfit2_k7, tpred2_k7 = knn(x_train_clustr, y_train_clustr, x_test, k_neighs=7)
     print('K = 7:')
@@ -309,7 +313,7 @@ if __name__ == '__main__':
     display_CM_Error(y_pred_clustr_k7, y_test)
     print(f'Fit times for training set of length {int(len(x_train)/n_chunks)}:\n\tWithout clustering: {tfit1_k7}s\n\tWith clustering: {tfit2_k7}s')
     print(f'\nPrediction times for test set of length {int(len(x_test)/n_chunks)}:\n\tWithout clustering: {tpred1_k7}s\n\tWith clustering: {tpred2_k7}s\n')
-
+    print(f'Clustering time: {cluster_time}')
     # """
 
     """
