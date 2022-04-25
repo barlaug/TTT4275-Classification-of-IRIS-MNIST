@@ -6,6 +6,20 @@ import copy
 
 import seaborn as sns
 
+
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+
+data = iris.data
+
+dataset_iris = np.array(data)
+print(dataset_iris)
+
+legends = iris.target_names
+legendslist_iris = np.array(legends)
+print(legendslist_iris[1])
+
 # Target vectors
 t1 = np.array([1, 0, 0])
 t2 = np.array([0, 1, 0])
@@ -46,6 +60,8 @@ for i in range(Classes): #3 classes
    # print(tmp)
     # Add the class, and 1
     class_number = np.ones((tmp.shape[0],2)) 
+    print(class_number)
+    print("\n----------------------------------------------------------\n")
     class_number[:,-1] *= i 
     tmp = np.hstack((tmp, class_number))
     print("\n")
@@ -65,7 +81,7 @@ tmp = tmp / tmp.max(axis=0)
 data[:,:-1] = tmp
 """
 
-print("\n")
+print("----------------------------------------------------------\n")
 print(data)
 
 train_set_size = 30
@@ -92,3 +108,20 @@ print("\n")
 print(train_samples)
 print("\n")
 print(test_samples)
+
+
+for i in range(Classes):
+    petal_data = data[(50*i):(50*(i+1)),2:-2]
+    plt.scatter(petal_data[:,0],petal_data[:,1])
+plt.title("Petal data")
+plt.show()
+
+
+for i in range(Classes):
+    sepal_data = data[(50*i):(50*(i+1)),:-4]
+    plt.scatter(sepal_data[:,0],sepal_data[:,1])
+plt.title("Sepal data")
+plt.show()
+
+
+print(int(len(train_samples[0])))

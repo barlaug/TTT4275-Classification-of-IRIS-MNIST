@@ -8,9 +8,23 @@ import copy
 import seaborn as sns
 
 #from keras.datasets import mnist #!NB: pip install tensorflow, pip install keras -> Skriv i readme.
-from sklearn.neighbors import KNeighborsClassifier # NB: pip install sklearn
-from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
-from sklearn.cluster import KMeans
+#from sklearn.neighbors import KNeighborsClassifier # NB: pip install sklearn
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay #,zeroOneloss
+#from sklearn.cluster import KMeans
+
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+
+data = iris.data
+
+dataset_iris = np.array(data)
+print(dataset_iris)
+
+legends = iris.target_names
+legendslist_iris = np.array(legends)
+#print(legendslist_iris[1])
+
 
 # Target vectors
 t1 = np.array([1, 0, 0])
