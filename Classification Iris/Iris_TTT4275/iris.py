@@ -1,192 +1,366 @@
 # Importing the modules
+from distutils.log import error
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
-
-import seaborn as sns
-
-#from keras.datasets import mnist #!NB: pip install tensorflow, pip install keras -> Skriv i readme.
-#from sklearn.neighbors import KNeighborsClassifier # NB: pip install sklearn
-from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay #,zeroOneloss
-#from sklearn.cluster import KMeans
-
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay, zero_one_loss
 from sklearn.datasets import load_iris
 
-iris = load_iris()
-
-data = iris.data
-
-dataset_iris = np.array(data)
-print(dataset_iris)
-
-legends = iris.target_names
-legendslist_iris = np.array(legends)
-#print(legendslist_iris[1])
-
-
-# Target vectors
-t1 = np.array([1, 0, 0])
-t2 = np.array([0, 1, 0])
-t3 = np.array([0, 0, 1])
-
-legends = ['Setosa', 'Versicolour', 'Virginica']
-# Split data into training and testing data
-#N_obsv = length(class1)
-N_train = 30
-N_test  = 20
-
-Classes = 3
 
 def load_data():
-    for i in range(Classes): #3 classes
-        file_name2 = './class_' + str(i+1)
-        tmp = np.loadtxt(file_name2,delimiter=",")
-        
-    # print("\n")
-    # print(tmp)
-        # Extend vectors to include the ones and the class-index
-        class_number = np.ones((tmp.shape[0],2)) 
-        class_number[:,-1] *= i 
-        tmp = np.hstack((tmp, class_number))
-        print("\n")
-        print(tmp)
-        if i > 0:
-            data = np.vstack((data, tmp))
-        else:
-            data = copy.deepcopy(tmp)
+    """Loads iris with sklearn
+    Returns:
+        dataset_iris: np.ndarray
+            Features for all samples for every class
+        legendslist_iris: np.ndarray 
+            Array of target_labels (3,1) 
+        target_vector: np.ndarray
+            Vector containing 150 corresponding targets 
+    """
+    iris = load_iris()
+    dataset_iris = np.array(iris.data)
+    legendslist_iris = np.array(iris.target_names)
+    target_vector = np.array(iris.target)
 
-    return data #returns datamatrix without normalized vectors 
+    return dataset_iris, legendslist_iris, target_vector
 
-"""
 
-[x1 x2 x3 x4 1 "class-index"]
-[x1 x2 x3 x4 1 "class-index"]
-.
-.
-.
-[x1 x2 x3 x4 1 "class-index"]
-
-[90, 6] - matrix
-
-"""
-
-def split_data(data, train_set_size):
-    N = int(len(data)/Classes)
+def extract_sets(data, targets, train_set_size, num_classes):
+    """Splits data into training set and testing set
+    Params:
+       data: np.ndarray
+            Full iris dataset, with all samples for every class
+       train_set_size: int
+            Desired size of training set
+        num_classes: int
+            Desired size of training set
+    Returns:
+        train_samples, test_samples: np.ndarray
+        t_train, t_test: np.ndarray
+            t vector of index for 
+        y_train, y_test: np.array
+            True outputs corresponding to the training set and 
+                testset respectively
+    """
+    N = int(len(data)/num_classes)
 
     test_set_size = N - train_set_size
-    train_samples = np.zeros((Classes*train_set_size,int(len(data[0]))))
-    test_samples = np.zeros((Classes*test_set_size,int(len(data[0]))))
 
-    for i in range(Classes):
-        temp = data[(N*i):((i+1)*N)]
-        print(temp.shape)
-        train_samples[(train_set_size*i):((i+1)*train_set_size), :] = temp[ :train_set_size,:]
-        test_samples[(test_set_size*i):((i+1)*test_set_size), :] = temp[train_set_size:,:]
+    train_samples = np.zeros((num_classes*train_set_size,int(len(data[0]))+1))
+    test_samples = np.zeros((num_classes*test_set_size,int(len(data[0]))+1))
+    t_train = np.zeros((num_classes*train_set_size, num_classes))
+    t_test = np.zeros((num_classes*test_set_size, num_classes))
+    y_train = np.zeros((num_classes*train_set_size))
+    y_test = np.zeros((num_classes*test_set_size))
 
-    return train_samples, test_samples
+    t_vec = np.zeros((int(len(targets)), num_classes)) 
+    #Produce targetmatrix corresponding to the right classes
+    for i in range(int(len(targets))):
+        t_vec[i][targets[i]] = 1
 
+    for i in range(num_classes):
+        feature_temp = data[(N*i):((i+1)*N)]
+        target_temp = t_vec[(N*i):((i+1)*N)]
+        y_temp = targets[(N*i):((i+1)*N)]
 
+        # Add the ones in every x[4], for features
+        feature_number = np.ones((feature_temp.shape[0],1))
+        feature_temp = np.hstack((feature_temp, feature_number))
 
-def train_lin_classifier(train_samples, test_samples, features, alphas, num_iterations):
-    num_classes = Classes
-    num_features = int(len(features))
-    x = train_samples
+        train_samples[(train_set_size*i):((i+1)*train_set_size), :] = feature_temp[ :train_set_size,:]
+        test_samples[(test_set_size*i):((i+1)*test_set_size), :] = feature_temp[train_set_size:,:]
 
+        t_train[(train_set_size*i):((i+1)*train_set_size), :] = target_temp[ :train_set_size, :]
+        t_test[(test_set_size*i):((i+1)*test_set_size), :] = target_temp[train_set_size:,:]
 
-    W = np.zeros((num_classes, num_features+1))
-    t = [np.kron(np.ones(1,N_train),t1), np.kron(np.ones(1,N_train),t2), np.kron(np.ones(1,N_train),t3)];
+        y_train[(train_set_size*i):((i+1)*train_set_size)] = y_temp[ :train_set_size]
+        y_test[(test_set_size*i):((i+1)*test_set_size)] = y_temp[train_set_size:]
 
-    gradient_W_MSE = 0
-    for iteration in range(num_iterations):
-        g_ik = sigmoid(x, W)
-        for xk in train_samples:
-            """
-            xk = np.array([np.transpose(x[k,:]), 1])
-            zk = W*xk
-            gk = sigmoid2(zk)
-            tk = t[:,k]
-
-            """
-            
-            #gk
-            temp = np.matmul(W, (xk[ :-1]))[np.newaxis].T
-            gk = sigmoid2(temp)
-
-            #
-            tk *= 0
-            tk[int(xk)]
+    return train_samples, test_samples, t_train, t_test, y_train, y_test
 
 
-        gradient_W_MSE = gradient_W_MSE + gradient_W_MSE(gk, tk, xk)
+def sigmoid(z_k):
+    """Sigmoid function. Equation (20) in compendium
+    Params:
+       z_k: np.ndarray
+    Returns:
+        np.ndarray
+    """
+    return 1/(1+np.exp(-z_k))
 
 
-def train_lin_classifier(train_samples, test_samples, features, tolerance):
-    num_classes = 3
-    num_features = len(features)
-    x = train_samples
+def train_lin_model(train_samples, train_targets, alpha, num_iterations, num_classes):
+    """Trains the linear model. Equations (19)-(23) in compendium implemented
+    Params:
+        train_samples: np.array
+            The training samples
+        train_targets: np.array
+            The targets, corresponding to the training samples
+        alpha: float
+            learning rate
+        num_iterations: int
+            Number of iterations we wish to use
+    Returns:
+        W: np.array
+            Cx(D+1) classifier
+        MSEarray: np.array
+            Array containing MSEs from the calculations. For plotting
+    """
+    num_features = int(len(train_samples[0]))
+    W = np.zeros((num_classes,num_features))
+    x_k = np.zeros((1, num_features))
+    t_k = np.zeros((num_classes,1))
+    z_k = np.zeros((num_classes,1))
+    g_k = np.zeros((num_classes,1)) # The input values we want to minimise MSE for
+    g_k[0] = 1 # Start with 1
+    MSEset = []
+    for i in range(num_iterations):
+        MSE = 0
+        grad_W_MSE = 0
+        for k in range(int(len(train_samples))):
+            x_k = np.reshape(train_samples[k], (1, num_features))
+            z_k = np.reshape(np.matmul(W, x_k.T), (num_classes, 1))
+            g_k = np.reshape(sigmoid(z_k), (num_classes, 1))
+            t_k = np.reshape(train_targets[k], (num_classes, 1))
 
-    condition = 1
-    iterations = 0
-    alpha = 0.001
+            grad_g_MSE = g_k - t_k
+            grad_z_gk = np.multiply(g_k,(1 - g_k)) #element wise
+            grad_W_z = x_k
+            grad = np.multiply(grad_g_MSE,grad_z_gk)
 
-    W = np.zeros((num_classes, num_features+1))
-    t = [np.kron(np.ones(1,N_train),t1), np.kron(np.ones(1,N_train),t2), np.kron(np.ones(1,N_train),t3)];
+            grad_W_MSE = grad_W_MSE + np.matmul(grad, grad_W_z)
 
-    gradient_W_MSE = 0
-    while condition: #while still over tolerance
-        for k in range(num_classes*N_train): 
-            xk = np.array([np.transpose(x[k,:]), 1])
-            zk = W*xk
-            gk = sigmoid2(zk)
-            tk = t[:,k]
-
-            gradient_W_MSE = gradient_W_MSE + gradient_W_MSE_k(gk, tk, xk)
-            
-        condition = np.linalg.norm(gradient_W_MSE) >= tolerance
-        iterations = iterations + 1
+            MSE = MSE + 0.5*np.multiply((g_k - t_k).T, (g_k - t_k))
         
-        
-        get_next_W(W, gradient_W_MSE, alpha)
-    print(iterations)
-    return W
+        MSEset.append(MSE)
+        W = W - alpha*grad_W_MSE
+    MSEarray = np.array(MSEset)
+    return W #, MSEarray
 
 
+def discriminant_classifier(W, test_samples):
+    """Decision rule and discriminant classifier. Equations (6)-(7) in compendium implemented
+    Params:
+        W: np.array
+            Cx(D+1) classifier
+        test_samples: np.ndarray
+
+    Returns:
+        y_pred: nparray
+            Array with predicted classes denoted with indexes 0-2 
+    """
+    x_test = np.zeros((1, len(test_samples[0])))
+    g_i = np.zeros((num_classes,1))
+    y_pred = np.zeros(len(test_samples))    
+    for i in range(len(test_samples)):
+        x_test = test_samples[i] 
+        g_i = np.matmul(W, x_test)
+        g_j = int(np.argmax(g_i))
+        y_pred[i] = g_j
+    return y_pred
 
 
+def tune_alpha(alphas, iterations, x, targets, train_set_size, num_classes):
+    x_train, x_test, t_train, t_test, y_train, y_test = extract_sets(x, targets, train_set_size, num_classes)
+    error_rate_set = []
+    #Eks 5 alphas mellom 0.0001 og 0.1og 15 forskjellige iterations melom 0 og 3500
+    for alpha in alphas:
+        for i in iterations:
+            W = train_lin_model(x_train[:,:], t_train, alpha, i, num_classes)
+            y_pred = discriminant_classifier(W, x_test)
+            error_rate = get_error_rate(y_test, y_pred)
+            error_rate_set.append(error_rate)
 
-def sigmoid(x, W): #x = samples
-    exponentials = np.array([ np.exp(-(np.matmul(W, xk))) for xk in x ])
-    denominators = exponentials + 1
-    return (1 / denominators) #
-
-
-def sigmoid2(zk):
-    return np.multiply(1,1/(1+np.exp(-zk)))
-
-
-def gradient_W_MSE_k(gk, tk, xk):
-    #Eq (22) from compendium
-    grad_gk_MSE = gk - tk
-    grad_zk_MSE = np.multiply(gk,(1-gk)) #matmul?
-    grad_W_zk = np.transpose(xk)
-    return np.multiply(grad_gk_MSE, grad_zk_MSE)*grad_W_zk
-
-
-def get_next_W(W, gradient_W_MSE, alpha):
-    next_W = W + - alpha*gradient_W_MSE
-    return next_W
-
-def get_MSE(g_vec, t_vec):
-    error = g_vec - t_vec
-    error_T = np.transpose(error)
-    return np.sum(np.matmul(error_T,error)) / 2
+    error_rate_vec = np.array(error_rate_set)
+    alpha_vec = np.array(alphas)
+    plt.scatter(alpha_vec, error_rate_vec)
+    plt.ylabel("Error rate")
+    plt.xlabel("alpha")
+    plt.title("Error rate as a function of alpha")
+    #print("Alpha value:", best_alpha)
+    plt.show()
 
 
-def main():
-    print("MAAAAIN")
+def illusrate_alphe_iterations(alphas, iterations, x, targets, train_set_size, num_classes):
+    x_train, x_test, t_train, t_test, y_train, y_test = extract_sets(x, targets, train_set_size, num_classes)
+    error_rate_set = []
+    for alpha in alphas:
+        for i in iterations:
+            W = train_lin_model(x_train[:,:], t_train, alpha, int(i), num_classes)
+            y_pred = discriminant_classifier(W, x_test)
+            error_rate = get_error_rate(y_test, y_pred)
+            error_rate_set.append(error_rate)
+    error_rate_vec = np.array(error_rate_set)
+    alpha_vec = np.array(alphas)
+    
+    for i in range(len(alphas)):
+        plt.scatter(error_rate_vec[i*int(iterations[i]):(i+1)*int(iterations[i])], iterations[i])
+        plt.ylabel("Error rate")
+        plt.xlabel("Iterations")
+        plt.title("Error rate as a function of iterations for different values of alpha")
+        #print("Alpha value:", best_alpha)
+    plt.show()
+
+
+ 
+
+def display_CM_Error(y_pred, y_true, legends):
+    """Displays confusion matrix, classification report/errors(optional) and error rate
+       for deviation between predicted and true labels
+    Params:
+        y_pred, y_true: np.ndarray
+            Predicted and true labels/classes
+    """
+    error_rate = (zero_one_loss(y_true, y_pred))*100
+    print(f"Error rate: {error_rate}%")
+    cm = confusion_matrix(y_true, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=legends)
+    disp.plot()
+    print('Displaying confusion matrix...')
+    plt.show()
+    #print('Classification report:')
+    #print(classification_report(y_true, y_pred)) # Accuracy is given in report
+    #Print error_rate
+
+
+def get_error_rate(y_true, y_pred):
+    """Returns error rate
+    Params:
+        y_true, y_pred: np.array
+            True and predicted labels/classes
+    Returns:
+        error_rate: float
+            Error_rate in percentage
+    """
+    error_rate = (zero_one_loss(y_true, y_pred))*100
+    return error_rate
+
+
+def plot_histogram(x, num_classes):
+    """Displays histogram for the four features from every class
+    Params:
+        x: np.ndarray
+            Complete iris dataset
+        num_classes: int
+            Number of classes
+    """
+    features = ["Sepal length", "Sepal width", "Petal length", "Petal width"]
+    N = int(len(x)/num_classes)
+    for i in range(len(features)):
+        n_bins = np.arange(0, 8,1/2)
+        plt.subplot(2, 2, i+1)
+        #colors={0:'r',1:'g',2:'b',3:'k'}
+        plt.hist([x[:N,i], x[N:2*N,i], x[2*N:len(x),i]], bins = n_bins) #, color = colors, ec = colors)
+        plt.xlabel(features[i])
+        plt.ylabel("Count")
+        plt.xlabel("%s [cm]" % features[i])
+    print("Plotting histogram")
+    plt.show()
+
+
+def remove_feature(x, feature_index):
+    return np.delete(x, feature_index, axis=1)
 
 
 if __name__ == '__main__':
-    main()
+    num_classes = 3
+    iris_data, iris_legends, iris_targets = load_data()
+    iterations = 2000
+    train_set_size = 30
+    test_set_size = 20 #needed for task 1d)
+
+    #TASK 1
+    plot_histogram(iris_data, num_classes)
+
+    #Eks 5 alphas mellom 0.0001 og 0.1og 15 forskjellige iterations melom 0 og 3500
+    alphas = [0.0005, 0.001, 0.005, 0.01, 0.05]
+    iter = np.linspace(0, 100, 10)
+    #tune_alpha(alphas, iris_data, iris_targets, train_set_size, iterations, num_classes)
+    illusrate_alphe_iterations(alphas, iter, iris_data, iris_targets, train_set_size, num_classes)
+    print("\n-------------------------------------------------------------\n")
+    alpha = [0.006]
+
+    x_train, x_test, t_train, t_test, y_train, y_test = extract_sets(
+        iris_data, iris_targets, train_set_size, num_classes)
+    print("Task 1a)-c)")
+    print("30 training samples, 20 test samples from each class")
+    W1 = train_lin_model(x_train[:,:], t_train, alpha, iterations, num_classes)
+    print("Confusion matrix and error rate for the testing set:")
+    y_pred_test = discriminant_classifier(W1, x_test)
+    display_CM_Error(y_pred_test, y_test, iris_legends)
+    
+    print("Confusion matrix and error rate for the training set:")
+    y_pred_train = discriminant_classifier(W1, x_train)
+    display_CM_Error(y_pred_train, y_train, iris_legends) #Dimensions!
+
+
+    print("\n-------------------------------------------------------------\n")
+    #TASK 1d)
+    x_test, x_train, t_test, t_train, y_test, y_train = extract_sets(
+        iris_data, iris_targets, test_set_size, num_classes)
+    print("Task 1d)")
+    print("30 last samples as training samples, 20 first samples as test samples")
+    W2 = train_lin_model(x_train[:,:], t_train, alpha, iterations, num_classes)
+    print("Confusion matrix and error rate for the testing set:")
+    y_pred_test = discriminant_classifier(W2, x_test)
+    display_CM_Error(y_pred_test, y_test, iris_legends)
+    
+    print("Confusion matrix and error rate for the training set:")
+    y_pred_train = discriminant_classifier(W2, x_train)
+    display_CM_Error(y_pred_train, y_train, iris_legends)
+    
+    print("\n-------------------------------------------------------------\n")
+    #TASK 2
+    print("Task 2a)")
+    print("Removing feature(s) with the most overlap:")
+    #removing 1 feature. Removing index 1 (Sepal width)
+    print("Removing Sepal width:")
+    iris_data_1 = remove_feature(iris_data,1)
+    x_train, x_test, t_train, t_test, y_train, y_test = extract_sets(
+        iris_data_1, iris_targets, train_set_size, num_classes)
+
+    W3 = train_lin_model(x_train[:,:], t_train, alpha, iterations, num_classes)
+    print("Confusion matrix and error rate for the testing set:")
+    y_pred_test = discriminant_classifier(W3, x_test)
+    display_CM_Error(y_pred_test, y_test, iris_legends)
+    
+    print("Confusion matrix and error rate for the training set:")
+    y_pred_train = discriminant_classifier(W3, x_train)
+    display_CM_Error(y_pred_train, y_train, iris_legends)
+    
+    #"""
+    #removing 2 features. Removing index 1, 0 ():
+    print("Removing Sepal length:")
+    iris_data_2 = remove_feature(iris_data_1,0)
+    x_train, x_test, t_train, t_test, y_train, y_test = extract_sets(
+        iris_data_2, iris_targets, train_set_size, num_classes)
+
+    W4 = train_lin_model(x_train[:,:], t_train, alpha, iterations, num_classes)
+    print("Confusion matrix and error rate for the testing set:")
+    y_pred_test = discriminant_classifier(W4, x_test)
+    display_CM_Error(y_pred_test, y_test, iris_legends)
+    print("Confusion matrix and error rate for the training set:")
+    y_pred_train = discriminant_classifier(W4, x_train)
+    display_CM_Error(y_pred_train, y_train, iris_legends)
+
+    #removing 3 features. Removing 3 (1) ():
+    print("Removing Petal width:")
+    iris_data_3 = remove_feature(iris_data_2,1) #Hvilken index blir riktig å fjerne her?
+    x_train, x_test, t_train, t_test, y_train, y_test = extract_sets(
+        iris_data_3, iris_targets, train_set_size, num_classes)
+
+    W5 = train_lin_model(x_train[:,:], t_train, alpha, iterations, num_classes)
+    print("Confusion matrix and error rate for the testing set:")
+    y_pred_test = discriminant_classifier(W5, x_test)
+    display_CM_Error(y_pred_test, y_test, iris_legends)
+    print("Confusion matrix and error rate for the training set:")
+    y_pred_train = discriminant_classifier(W5, x_train)
+    display_CM_Error(y_pred_train, y_train, iris_legends)
+    #"""
+
+    print("\n-------------------------------------------------------------\n")
+
+        
+        
