@@ -5,8 +5,6 @@ import numpy as np
 import copy
 
 
-import seaborn as sns
-
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay, zero_one_loss
 from sklearn.datasets import load_iris
 
