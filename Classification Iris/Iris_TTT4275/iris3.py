@@ -17,9 +17,8 @@ Classes = 3
 
 def load_data():
     """Loads iris with sklearn
-    
     Returns:
-        Target
+        Iris_data, vector of target_labels (3,1) and a vector containing 150 corresponding targets 
     """
     iris = load_iris()
     dataset_iris = np.array(iris.data)
@@ -40,10 +39,15 @@ def extract_sets(data, targets, train_set_size, num_classes):
             Desired size of training set
     Returns:
         Training set, testing set: np.ndarray
+        y_true: np.array
+            True outputs corresponding to the testset
+        y_true: np.array
+            True outputs corresponding to the testset
     """
     N = int(len(data)/num_classes)
 
     test_set_size = N - train_set_size
+
     train_samples = np.zeros((num_classes*train_set_size,int(len(data[0]))+1))
     test_samples = np.zeros((num_classes*test_set_size,int(len(data[0]))+1))
     y_true = np.zeros((num_classes*test_set_size))
@@ -122,8 +126,10 @@ def train_lin_model(train_samples, train_targets, alpha, num_iterations):
     num_features = int(len(train_samples[0])) #5
 
     W = np.zeros((num_classes,num_features))
-
+    
+    x_k = np.zeros((1, num_features))
     t_k = np.zeros((num_classes,1))
+    z_k = np.zeros((num_classes,1))
     g_k = np.zeros((num_classes,1)) # The input values we want to minimise MSE for
     g_k[0] = 1 # always start with 1
     MSEset = []
@@ -132,21 +138,21 @@ def train_lin_model(train_samples, train_targets, alpha, num_iterations):
         grad_W_MSE = 0
         for k in range(int(len(train_samples))):
             x_k = np.reshape(train_samples[k], (1, 5))
-            z_k = np.matmul(W, x_k.T)
-            g_k = np.reshape(sigmoid(z_k), (1, 3))
+            z_k = np.reshape(np.matmul(W, x_k.T), (3, 1))
+            g_k = np.reshape(sigmoid(z_k), (3, 1))
 
 
-            t_k = np.reshape(train_targets[k], (1, 3))
-
+            t_k = np.reshape(train_targets[k], (3, 1))
+            #print(t_k)
             grad_g_MSE = g_k - t_k
             grad_z_gk = np.multiply(g_k,(1 - g_k)) #element wise
             grad_W_z = x_k
 
             grad = np.multiply(grad_g_MSE,grad_z_gk).T
-            
-            grad_W_MSE = grad_W_MSE + np.matmul(grad, grad_W_z)
+            grad2 = np.multiply(np.multiply((g_k - t_k), g_k), (1 - g_k))
+            grad_W_MSE = grad_W_MSE + np.matmul(grad2, grad_W_z)
 
-            MSE = 0.5*np.multiply((g_k - t_k).T, (g_k - t_k))
+            MSE = MSE + 0.5*np.multiply((g_k - t_k).T, (g_k - t_k))
         
         MSEset.append(MSE)
         W = W - alpha*grad_W_MSE
@@ -165,12 +171,12 @@ def discriminant_classifier(W, test_samples, y_true):
 
     """
     x_test = np.zeros((1, len(test_samples[0])))
-    g_k = np.zeros((num_classes,1))
+    g_i = np.zeros((num_classes,1))
     y_pred = np.zeros(len(test_samples))
     
     for i in range(len(test_samples)):
-        x_test = np.reshape(test_samples[i,:], (1, 5))
-        g_i = np.matmul(W, x_test.T)
+        x_test = test_samples[i,:] #np.reshape(test_samples[i,:], (1, 5))
+        g_i = np.matmul(W, x_test)
         print(g_i)
         g_j = int(np.argmax(g_i))
         print(g_j)
@@ -179,8 +185,6 @@ def discriminant_classifier(W, test_samples, y_true):
 
 
     return y_pred
-
-
 
 
 
@@ -200,9 +204,15 @@ def display_CM_Error(y_pred, y_true):
     print('Classification report:')
     print(classification_report(y_true, y_pred)) # Accuracy is given in report
 
+
 def print_error_rate(y_true, y_pred):
+    """Prints error rate
+    Params:
+        y_true, y_pred: np.array
+            Predicted and true labels/classes
+    """
     accuracy = zero_one_loss(y_true, y_pred)
-    error_rate = (1 - accuracy)*100
+    error_rate = (accuracy)*100
     print(f"Error rate: {error_rate}%")
 
 
@@ -210,8 +220,8 @@ if __name__ == '__main__':
     num_classes = 3
     iris_data, iris_legends, iris_targets = load_data()
     #alphas = [0.5, 0.25, 0.1, 0.05, 0.005]
-    alphas = [0.05]
-    iterations = 1000
+    alphas = [0.006]
+    iterations = 2000
     train_set_size = 30
     train_set, test_set, t_train, y_true = extract_sets(iris_data, iris_targets, train_set_size, num_classes)
     for alpha in alphas:
