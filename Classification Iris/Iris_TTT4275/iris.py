@@ -198,7 +198,7 @@ if __name__ == '__main__':
     train_set_size = 30
     test_set_size = 20 #needed for task 1d)
 
-    #plot.plot_histogram(iris_data, num_classes, iris_legends)
+    plot.plot_histogram(iris_data, num_classes, iris_legends)
     #plot.display_ER_MSE_iterations(iris_data, iris_targets, train_set_size, num_classes)
 
     #TASK 1
