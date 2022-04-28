@@ -1,5 +1,5 @@
 # TTT4275: Classification of IRIS & MNIST
-This repository contains implementation of the classification project in TTT4275 - Estimation, Detection and Classification.
+This repository contains implementation of the classification project in TTT4275 - Estimation, Detection and Classification.\n
 By Edvard Vedeler and Eirik Runde Barlaug.
 
 ## Installation
