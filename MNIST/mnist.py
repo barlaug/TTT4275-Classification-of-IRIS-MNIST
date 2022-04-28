@@ -176,9 +176,22 @@ def cluster(data, labels, M):
     y_train_small = np.array(y_train_small).astype(int)
     return x_train_small, y_train_small, cluster_time
 
-def display_cluster_centroid():
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    return
+def display_cluster_centroid(x_train_clustr, label, n):
+    """Displays n cluster centroids from template label
+    Params:
+        x_train_clustr: np.ndarray
+            Clustered training vector
+        label: int
+            What label to display from
+        n: int
+            Number of exmaples to display
+    """
+    print(f'Displaying {n} cluster centroids for label: {label}')
+    for i in range(n):
+        plt.imshow(x_train_clustr[label*64+i].reshape(28, 28))
+        plt.show()
+
+    
 
 def display_CM_Error(y_pred, y_true):
     """Displays confusion matrix and classification report/errors
@@ -208,41 +221,26 @@ def k_performancemeasure(k_max, x_train, y_train, x_test, y_test):
         fit_times.append(tk_fit)
         pred_times.append(tk_pred)
         error.append(np.mean(y_pred != y_test))
-        
-    fig, ax = plt.subplots(3, sharex=True)
-    fig.suptitle('Performance with different K-values')
-    ax[0].plot(range(1, k_max), error, color='black', linestyle='dashed', marker='o',
+    plt.plot(range(1, k_max), error, color='black', linestyle='dashed', marker='o',
             markerfacecolor='red')
-    ax[0].set_ylabel('Mean Error')
-
-    ax[1].plot(range(1, k_max), fit_times, color='black', linestyle='dashed', marker='o',
-            markerfacecolor='red')
-    ax[1].set_ylabel('Fit Time [s]')
-
-    ax[2].plot(range(1, k_max), pred_times, color='black', linestyle='dashed', marker='o',
-            markerfacecolor='red')
-    ax[2].set_xlabel('K Value')
-    ax[2].set_ylabel('Prediction Time [s]')
+    plt.ylabel('Mean Error')
+    plt.xlabel('K Value')
     plt.show()
     
 # END utilities
 
 
 if __name__ == '__main__':
-    ######### PRESENT TASKS ##########
-
     #"""
-    # TASK 1
-    # (For this task you may comment out entire TASK 2)
+    # TASK 1    (For this task you may comment out entire TASK 2)
 
     # GLOBALS: 
     # Change them as you like, recommended n_chunks = 5
     n_chunks = 5
     # Choose which data chunck to use after splitted, 0 is fine - Change it for slightly different results
     chunk = 0
-    # Choose number of falsely predicted images to display in Task 1B
+    # Choose number of falsely and correctly predicted images to display in Task 1A+1B
     n_fails = 4
-    # Choose number of correctly predicted images to display in Task 1C
     n_corrects = 4
 
     # Load data
@@ -259,27 +257,24 @@ if __name__ == '__main__':
     # Classify the values in the test set with a kNN-classifier with k_neighs neighbours
     y_pred, _, _ = knn(x_train, y_train, x_test, k_neighs=3)
 
-    # Display confusion matrix and error rate for the classifier
+    # Display confusion matrix and error rate
     print(f"Initial confusion matrix and error with K = 3, trained on {int(len(x_train)/n_chunks)} samples: ")
     display_CM_Error(y_pred, y_test)
 
     # Sort failed and correctly predicted pictures by index 
     failed_indexes, correct_indexes = sort_predictions_knn(y_pred, y_test)
-    # Show some (n_fails) misclassified pictures
+    # Show some misclassified and some correctly classified pictures
     display_predictions(failed_indexes, [], x_test, y_test, y_pred, n_fails)
-    # Show some (n_corrects) correctly classified pictures
     display_predictions([], correct_indexes, x_test, y_test, y_pred, n_corrects)
 
-    # """ 
-    # TASK 2
-    # (For this task you may comment out entire TASK 1)
+    #"""  
+    # TASK 2    (For this task you may comment out entire TASK 1)
 
     # For task 2 we need the whole dataset; update globals and data vectors
     n_chunks = 1
     chunk = 0
-    # Load data
+
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    # Change to np.array and type to int/float
     x_train = np.asarray(x_train).astype(float)
     y_train = np.asarray(y_train).astype(int)
     x_test = np.asarray(x_test).astype(float)
@@ -294,6 +289,7 @@ if __name__ == '__main__':
     # per class with the whole dataset. Measure and display time spent on fitting and predicting 
     y_pred, tfit1, tpred1 = knn(x_train, y_train, x_test, k_neighs=3)
     y_pred_clustr, tfit2, tpred2 = knn(x_train_clustr, y_train_clustr, x_test, k_neighs=3)
+    # Disp:
     print('K = 3:')
     print("Confusion matrix and error without clustering:")
     display_CM_Error(y_pred, y_test)
@@ -306,6 +302,7 @@ if __name__ == '__main__':
     # Design kNN classifier with k = 7. Find confusion matrix and error rate. Compare with previous systems.
     y_pred_k7, tfit1_k7 , tpred1_k7 = knn(x_train, y_train, x_test, k_neighs=7)
     y_pred_clustr_k7, tfit2_k7, tpred2_k7 = knn(x_train_clustr, y_train_clustr, x_test, k_neighs=7)
+    # Disp:
     print('K = 7:')
     print("Confusion matrix and error without clustering:")
     display_CM_Error(y_pred_k7, y_test)
@@ -314,21 +311,11 @@ if __name__ == '__main__':
     print(f'Fit times for training set of length {int(len(x_train)/n_chunks)}:\n\tWithout clustering: {tfit1_k7}s\n\tWith clustering: {tfit2_k7}s')
     print(f'\nPrediction times for test set of length {int(len(x_test)/n_chunks)}:\n\tWithout clustering: {tpred1_k7}s\n\tWith clustering: {tpred2_k7}s\n')
     print(f'Clustering time: {cluster_time}')
-    # """
-
+    #"""
     """
     # Extra: 
-    # (For this part, you may comment out the rest of main)
-    # Plot kNN performance as a function of number of neighbours k
-    # Takes a while to compute, as it evaluates knn() k_max times...
+    # Plot kNN error rate as a function of neighbours k
+    # Takes a while to compute, as it evaluates knn() k_max times
     k_max = 30
     k_performancemeasure(k_max, x_train, y_train, x_test, y_test)
-
-    # """
-
-
-
-
-
-
-
+    #"""
