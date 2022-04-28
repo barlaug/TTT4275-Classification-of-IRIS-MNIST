@@ -1,5 +1,5 @@
 # TTT4275: Classification of IRIS & MNIST
-This repository contains implementation of the classification project in TTT4275 - Estimation, Detection and Classification.\n
+This repository contains implementation of the classification project in TTT4275 - Estimation, Detection and Classification.<br />
 By Edvard Vedeler and Eirik Runde Barlaug.
 
 ## Installation
@@ -16,7 +16,7 @@ pip install numpy
 ```
 
 ## Running the code
-Begin by cloning the repo. To run, either press play inside mnist.py og iris.py in your IDE or simply type
+Clone the repo. To run, either press play inside mnist.py or iris.py in your IDE, or simply type
 ```
 python iris.py
 python mnist.py
