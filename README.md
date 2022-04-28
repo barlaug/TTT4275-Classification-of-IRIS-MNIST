@@ -16,7 +16,7 @@ pip install numpy
 ```
 
 ## Running the code
-Clone the repo. To run, either press play inside mnist.py or iris.py in your IDE, or simply type
+Clone the repo. To run, either press play inside **mnist.py** or **iris.py** in your IDE, or simply type
 ```
 python iris.py
 python mnist.py
