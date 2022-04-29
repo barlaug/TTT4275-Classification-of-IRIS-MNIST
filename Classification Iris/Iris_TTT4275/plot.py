@@ -1,9 +1,7 @@
 from distutils.log import error
 import matplotlib.pyplot as plt
 import numpy as np
-
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, zero_one_loss
-
 import iris
 
 
@@ -23,7 +21,7 @@ def display_ER_MSE_iterations(x, targets, train_set_size, num_classes):
     x_train, x_test, t_train, t_test, y_train, y_test = iris.extract_sets(x, targets, train_set_size, num_classes)
     fig, (ax1, ax2) = plt.subplots(2, sharex=True)
     #Values for which we want to test
-    alphas = [0.0005, 0.001, 0.005, 0.05]#, 0.001, 0.005, 0.01, 0.05]
+    alphas = [0.0005, 0.001, 0.005, 0.05]
     iterations = 3000
     for alpha in alphas:
         print("Alpha: " + str(alpha))

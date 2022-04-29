@@ -1,10 +1,7 @@
-# Importing the modules
 from distutils.log import error
-import numpy as np
-
 from sklearn.metrics import zero_one_loss
 from sklearn.datasets import load_iris
-
+import numpy as np
 import plot
 
 def load_data():
@@ -196,7 +193,7 @@ if __name__ == '__main__':
     iris_data, iris_legends, iris_targets = load_data()
     iterations = 2000
     train_set_size = 30
-    test_set_size = 20 #needed for task 1d)
+    test_set_size = 20 
 
     plot.plot_histogram(iris_data, num_classes, iris_legends)
     #plot.display_ER_MSE_iterations(iris_data, iris_targets, train_set_size, num_classes)
@@ -261,7 +258,7 @@ if __name__ == '__main__':
     plot.display_CM_Error(y_pred_train, y_train, iris_legends)
 
     print("Removing Petal width:")
-    iris_data_3 = remove_feature(iris_data_2,1) #Hvilken index blir riktig å fjerne her?
+    iris_data_3 = remove_feature(iris_data_2,1)
     x_train, x_test, t_train, t_test, y_train, y_test = extract_sets(
         iris_data_3, iris_targets, train_set_size, num_classes)
 
