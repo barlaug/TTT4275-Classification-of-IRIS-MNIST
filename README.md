@@ -3,13 +3,13 @@ This repository contains implementation of the classification project in TTT4275
 By Edvard Vedeler and Eirik Runde Barlaug.
 
 ## Installation
-You must have Python and pip installed. To install the required extention packages, run the following commands:
+You must have Python and pip installed. To install the required libraries, run the following commands:
 ```
 pip install tensorflow
 pip install keras
 pip install sklearn
 ```
-And, if not already installed:
+And, if not already installed, run:
 ```
 pip install pandas
 pip install numpy
@@ -21,4 +21,4 @@ Clone the repo. To run, either press play inside **mnist.py** or **iris.py** in 
 python iris.py
 python mnist.py
 ```
-from a terminal. You must remember to be inside the correct directory. 
+from a terminal. You must remember to call the commands from within the correct directory. 
